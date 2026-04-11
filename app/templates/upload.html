@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>LensScanDx | Upload</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+
+/* ================= BACKGROUND ================= */
+
+body {
+    margin:0;
+    overflow:hidden;
+    font-family: 'Inter', sans-serif;
+    background: radial-gradient(circle at center, #020617, #000);
+}
+
+/* GRID */
+.grid-bg {
+    position:absolute;
+    width:100%;
+    height:100%;
+    background-image:
+        linear-gradient(rgba(0,255,255,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,255,0.06) 1px, transparent 1px);
+    background-size:40px 40px;
+    animation: gridMove 10s linear infinite;
+}
+@keyframes gridMove {
+    0% { transform:translateY(0); }
+    100% { transform:translateY(40px); }
+}
+
+/* PARTICLES */
+.particle {
+    position:absolute;
+    width:3px;
+    height:3px;
+    background:cyan;
+    border-radius:50%;
+    opacity:0.7;
+    animation: floatUp 12s linear infinite;
+}
+@keyframes floatUp {
+    0% { transform:translateY(100vh); opacity:0 }
+    20% { opacity:1 }
+    100% { transform:translateY(-10vh); opacity:0 }
+}
+
+/* BLOBS */
+.blob {
+    position:absolute;
+    width:400px;
+    height:400px;
+    background:cyan;
+    filter:blur(200px);
+    opacity:0.08;
+    animation: blobMove 12s infinite alternate;
+}
+@keyframes blobMove {
+    0% { transform:translate(0,0) }
+    100% { transform:translate(200px,100px) }
+}
+
+/* ================= HEADER ================= */
+
+.header {
+    position:absolute;
+    top:0;
+    left:0;
+    padding:20px 40px;
+    z-index:100;
+}
+
+.logo {
+    font-size:24px;
+    font-weight:bold;
+    color:cyan;
+    text-shadow:0 0 10px cyan,0 0 30px cyan,0 0 60px cyan;
+    animation: logoGlow 3s infinite;
+}
+@keyframes logoGlow {
+    0%,100% {opacity:1}
+    50% {opacity:0.7}
+}
+
+.tagline {
+    font-size:12px;
+    color:#aaa;
+    letter-spacing:1px;
+}
+
+/* ================= CARD ================= */
+
+.glass {
+    background:rgba(255,255,255,0.04);
+    backdrop-filter:blur(20px);
+    border:1px solid rgba(0,255,255,0.2);
+    box-shadow:0 0 40px rgba(0,255,255,0.1);
+    transition:0.4s;
+}
+
+.glass:hover {
+    transform: translateY(-10px) scale(1.02);
+}
+
+/* TITLE */
+.title {
+    font-size:2.5rem;
+    font-weight:800;
+    color:cyan;
+    text-shadow:0 0 20px cyan;
+}
+
+/* UPLOAD ZONE */
+.upload-zone {
+    border:2px dashed rgba(0,255,255,0.4);
+    transition:0.4s;
+}
+.upload-zone:hover {
+    border-color:cyan;
+    box-shadow:0 0 30px cyan;
+    transform:scale(1.03);
+}
+
+/* BUTTON */
+.btn {
+    background:linear-gradient(90deg, cyan, blue);
+    padding:14px;
+    border-radius:999px;
+    font-weight:bold;
+    box-shadow:0 0 20px cyan;
+    transition:0.3s;
+}
+.btn:hover {
+    transform:scale(1.1);
+    box-shadow:0 0 60px cyan;
+}
+
+/* PREVIEW */
+.preview-container {
+    position:relative;
+}
+
+.scan-overlay {
+    position:absolute;
+    width:100%;
+    height:3px;
+    background:cyan;
+    animation: scanMove 2s infinite;
+}
+@keyframes scanMove {
+    0% { top:0 }
+    100% { top:100% }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="grid-bg"></div>
+
+<!-- BLOBS -->
+<div class="blob" style="top:10%; left:20%"></div>
+<div class="blob" style="top:50%; left:60%"></div>
+
+<!-- PARTICLES -->
+<script>
+for(let i=0;i<60;i++){
+    let p=document.createElement("div");
+    p.className="particle";
+    p.style.left=Math.random()*100+"%";
+    p.style.animationDelay=Math.random()*10+"s";
+    document.body.appendChild(p);
+}
+</script>
+
+<!-- HEADER (ONLY LOGO) -->
+<header class="header">
+    <div class="logo">LensScanDx</div>
+    <div class="tagline">Diabetic Retinopathy Detection</div>
+</header>
+
+<!-- MAIN -->
+<div class="flex items-center justify-center h-screen">
+
+    <div class="glass p-10 rounded-2xl w-[420px] text-center">
+
+        <h1 class="title mb-6">Upload Retina</h1>
+
+        <form id="upload-form" class="space-y-6">
+
+            <!-- UPLOAD -->
+            <div id="uploadZone" class="upload-zone p-8 rounded-xl cursor-pointer">
+                <i class="fa-solid fa-eye text-4xl mb-3"></i>
+                <p>Drop Retina Scan or Click</p>
+                <input type="file" id="image" class="hidden" required>
+            </div>
+
+            <!-- PREVIEW -->
+            <div class="preview-container hidden" id="previewContainer">
+                <img id="preview" class="rounded-xl w-full">
+                <div class="scan-overlay"></div>
+            </div>
+
+            <!-- BUTTON -->
+            <button class="btn w-full">
+                INITIATE SCAN →
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+
+const zone = document.getElementById("uploadZone");
+const input = document.getElementById("image");
+const preview = document.getElementById("preview");
+const previewContainer = document.getElementById("previewContainer");
+
+zone.onclick = () => input.click();
+
+zone.addEventListener("dragover", e=>{
+    e.preventDefault();
+    zone.style.background="rgba(0,255,255,0.1)";
+});
+zone.addEventListener("dragleave", ()=> zone.style.background="transparent");
+
+zone.addEventListener("drop", e=>{
+    e.preventDefault();
+    input.files = e.dataTransfer.files;
+    showPreview();
+});
+
+input.addEventListener("change", showPreview);
+
+function showPreview(){
+    const file = input.files[0];
+    if(file){
+        preview.src = URL.createObjectURL(file);
+        previewContainer.classList.remove("hidden");
+    }
+}
+
+document.getElementById("upload-form").addEventListener("submit", async (e)=>{
+    e.preventDefault();
+
+    const file = input.files[0];
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    // ✅ CAPTURE RESPONSE
+    const res = await fetch('/predict', {
+        method:'POST',
+        body:formData
+    });
+
+    const data = await res.json();
+
+    // ✅ STORE EVERYTHING
+    localStorage.setItem("prediction", data.prediction);
+    localStorage.setItem("confidence", data.confidence);
+    localStorage.setItem("heatmap", data.heatmap);
+    localStorage.setItem("image_path", data.image_path);
+
+    window.location.href="/patient";
+});
+
+</script>
+</body>
+</html>

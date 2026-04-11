@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Virtual environment (never commit — recreate with requirements)
+venv/
+.venv/
+env/
+
+# Local / secrets
+.env
+.env.*
+*.local
+
+# Flask / SQLite / uploads
+app/instance/
+*.db
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Large local datasets (do not push — use README or release for data)
+dataset/
+data/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

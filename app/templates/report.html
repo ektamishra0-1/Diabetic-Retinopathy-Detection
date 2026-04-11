@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Report | LensScanDx</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            background: radial-gradient(circle at top, #0d2247, #040914 62%);
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-white p-8 md:p-10">
+
+{% if patient %}
+    {% set conf_pct = ((patient.confidence or 0) * 100) | round(2) %}
+    <div class="max-w-4xl mx-auto space-y-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-cyan-200">Patient Report Preview</h1>
+                <p class="text-cyan-100/70 text-sm mt-1">Minimal blue theme report preview with export.</p>
+            </div>
+            <a href="/dashboard" class="text-cyan-200 text-sm hover:underline">Back to Dashboard</a>
+        </div>
+
+        <div id="reportPreview" class="glass rounded-2xl p-6 space-y-4">
+            <div class="border-b border-cyan-300/20 pb-3">
+                <h2 class="text-xl font-semibold text-cyan-100">LensScanDx Diagnostic Report</h2>
+                <p class="text-xs text-cyan-100/70">Generated: {{ patient.timestamp.strftime("%Y-%m-%d %H:%M") if patient.timestamp else "—" }}</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4 text-sm">
+                <p><span class="text-cyan-100/70">Name:</span> {{ patient.name or "—" }}</p>
+                <p><span class="text-cyan-100/70">Age:</span> {{ patient.age if patient.age is not none else "—" }}</p>
+                <p><span class="text-cyan-100/70">Gender:</span> {{ patient.gender or "—" }}</p>
+                <p><span class="text-cyan-100/70">Smoking:</span> {{ patient.smoking or "—" }}</p>
+                <p><span class="text-cyan-100/70">HbA1c:</span> {{ patient.hba1c or "—" }}</p>
+                <p><span class="text-cyan-100/70">Blood Pressure:</span> {{ patient.bp or "—" }}</p>
+                <p><span class="text-cyan-100/70">Cholesterol:</span> {{ patient.cholesterol or "—" }}</p>
+                <p><span class="text-cyan-100/70">Diabetes Duration:</span> {{ patient.duration or "—" }}</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl bg-slate-950/60 border border-cyan-300/20 p-4">
+                    <p class="text-xs text-cyan-100/70">AI Prediction</p>
+                    <p class="text-lg text-cyan-200 font-semibold mt-1">{{ patient.prediction or "—" }}</p>
+                </div>
+                <div class="rounded-xl bg-slate-950/60 border border-cyan-300/20 p-4">
+                    <p class="text-xs text-cyan-100/70">Confidence</p>
+                    <p class="text-lg text-cyan-200 font-semibold mt-1">{{ conf_pct }}%</p>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <p class="text-xs text-cyan-100/70 mb-2">Retina Image</p>
+                    {% if patient.image_path %}
+                        {% set report_static_rel = patient.image_path.split('static/', 1)[1] if 'static/' in patient.image_path else patient.image_path %}
+                        <img id="reportRetinaImg" src="{{ url_for('static', filename=report_static_rel) }}" alt="Retina" class="rounded-xl w-full border border-cyan-300/30">
+                    {% else %}
+                        <div class="rounded-xl border border-dashed border-cyan-300/30 min-h-28 grid place-items-center text-cyan-100/50 text-sm">No retina image</div>
+                    {% endif %}
+                </div>
+                <div>
+                    <p class="text-xs text-cyan-100/70 mb-2">Grad-CAM Heatmap</p>
+                    {% if patient.heatmap %}
+                        <img id="reportHeatmapImg" src="data:image/jpeg;base64,{{ patient.heatmap }}" alt="Heatmap" class="rounded-xl w-full border border-cyan-300/30">
+                    {% else %}
+                        <div class="rounded-xl border border-dashed border-cyan-300/30 min-h-28 grid place-items-center text-cyan-100/50 text-sm">No heatmap image</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <p class="text-xs text-cyan-100/70 leading-relaxed">
+                Clinical note: This automated interpretation supports screening and should be reviewed with a qualified ophthalmologist for diagnosis and treatment planning.
+            </p>
+        </div>
+
+        <div class="flex gap-3 justify-end">
+            <button id="downloadPdfBtn" class="px-5 py-2.5 rounded-full bg-cyan-400 text-slate-950 font-semibold hover:scale-105 transition">
+                Download PDF
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const reportData = {
+            name: "{{ patient.name or '—' }}",
+            age: "{{ patient.age if patient.age is not none else '—' }}",
+            gender: "{{ patient.gender or '—' }}",
+            smoking: "{{ patient.smoking or '—' }}",
+            hba1c: "{{ patient.hba1c or '—' }}",
+            bp: "{{ patient.bp or '—' }}",
+            cholesterol: "{{ patient.cholesterol or '—' }}",
+            duration: "{{ patient.duration or '—' }}",
+            prediction: "{{ patient.prediction or '—' }}",
+            confidence: "{{ conf_pct }}%",
+            generatedAt: "{{ patient.timestamp.strftime('%Y-%m-%d %H:%M') if patient.timestamp else '—' }}"
+        };
+
+        const loadAsDataUrl = (imgEl) => {
+            if (!imgEl) return Promise.resolve(null);
+            const src = imgEl.getAttribute("src");
+            if (!src) return Promise.resolve(null);
+            if (src.startsWith("data:")) return Promise.resolve(src);
+
+            return fetch(src)
+                .then((res) => res.blob())
+                .then((blob) => new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                }))
+                .catch(() => null);
+        };
+
+        document.getElementById("downloadPdfBtn").addEventListener("click", async () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(18);
+            doc.text("LensScanDx Diagnostic Report", 14, 18);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(11);
+            doc.text(`Generated: ${reportData.generatedAt}`, 14, 26);
+
+            let y = 38;
+            const rows = [
+                ["Name", reportData.name],
+                ["Age", reportData.age],
+                ["Gender", reportData.gender],
+                ["Smoking", reportData.smoking],
+                ["HbA1c", reportData.hba1c],
+                ["Blood Pressure", reportData.bp],
+                ["Cholesterol", reportData.cholesterol],
+                ["Diabetes Duration", reportData.duration],
+                ["Prediction", reportData.prediction],
+                ["Confidence", reportData.confidence]
+            ];
+
+            rows.forEach(([k, v]) => {
+                doc.setFont("helvetica", "bold");
+                doc.text(`${k}:`, 14, y);
+                doc.setFont("helvetica", "normal");
+                doc.text(String(v), 58, y);
+                y += 8;
+            });
+
+            y += 6;
+            doc.setFontSize(10);
+            doc.setTextColor(70, 70, 70);
+            doc.text(
+                "Clinical note: AI screening output should be validated by a qualified ophthalmologist.",
+                14,
+                y
+            );
+
+            const retinaDataUrl = await loadAsDataUrl(document.getElementById("reportRetinaImg"));
+            const heatmapDataUrl = await loadAsDataUrl(document.getElementById("reportHeatmapImg"));
+
+            if (retinaDataUrl || heatmapDataUrl) {
+                doc.addPage();
+                doc.setTextColor(0, 0, 0);
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(16);
+                doc.text("Retina Visual Evidence", 14, 18);
+
+                let imageY = 28;
+                const imageW = 82;
+                const imageH = 82;
+
+                if (retinaDataUrl) {
+                    doc.setFontSize(11);
+                    doc.text("Original Retina", 14, imageY - 2);
+                    const retinaFormat = retinaDataUrl.includes("image/png") ? "PNG" : "JPEG";
+                    doc.addImage(retinaDataUrl, retinaFormat, 14, imageY, imageW, imageH);
+                }
+
+                if (heatmapDataUrl) {
+                    doc.setFontSize(11);
+                    doc.text("Grad-CAM Heatmap", 112, imageY - 2);
+                    const heatmapFormat = heatmapDataUrl.includes("image/png") ? "PNG" : "JPEG";
+                    doc.addImage(heatmapDataUrl, heatmapFormat, 112, imageY, imageW, imageH);
+                }
+            }
+
+            const safeName = (reportData.name || "patient").replace(/[^a-z0-9]/gi, "_").toLowerCase();
+            doc.save(`lensscandx_report_${safeName}.pdf`);
+        });
+    </script>
+{% else %}
+    <div class="max-w-3xl mx-auto">
+        <h1 class="text-3xl font-bold text-cyan-200 mb-4">Patient Report</h1>
+        <p class="text-cyan-100/70">No patient data available yet. Save a patient from the dashboard flow first.</p>
+        <a href="/dashboard" class="inline-block mt-6 text-cyan-200 hover:underline">Back to Dashboard</a>
+    </div>
+{% endif %}
+
+</body>
+</html>

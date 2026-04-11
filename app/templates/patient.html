@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Patient | LensScanDx</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+
+body {
+    background: radial-gradient(circle at top, #050816, #000);
+    font-family: 'Inter', sans-serif;
+}
+
+body::after {
+    content:"";
+    position:absolute;
+    width:500px;
+    height:500px;
+    background:cyan;
+    filter:blur(200px);
+    opacity:0.1;
+    top:10%;
+    left:20%;
+    animation:bgPulse 6s infinite;
+}
+@keyframes bgPulse {
+    0%{transform:scale(1)}
+    50%{transform:scale(1.3)}
+    100%{transform:scale(1)}
+}
+
+.glass {
+    background:rgba(255,255,255,0.05);
+    backdrop-filter:blur(12px);
+    border:1px solid rgba(255,255,255,0.1);
+    animation: floatCard 6s ease-in-out infinite;
+}
+@keyframes floatCard {
+    0%{transform:translateY(0)}
+    50%{transform:translateY(-10px)}
+    100%{transform:translateY(0)}
+}
+
+.input {
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    background:rgba(255,255,255,0.05);
+    border:1px solid cyan;
+    color:white;
+}
+
+.btn {
+    background:linear-gradient(to right, cyan, blue);
+    padding:12px;
+    border-radius:999px;
+    font-weight:bold;
+    transition:0.3s;
+    box-shadow:0 0 10px cyan;
+}
+.btn:hover {
+    transform:scale(1.1);
+    box-shadow:0 0 40px cyan;
+}
+
+.scan-container {
+    position: relative;
+    height: 420px;
+}
+
+.scan-line {
+    position:absolute;
+    width:100%;
+    height:3px;
+    background:cyan;
+    box-shadow:0 0 20px cyan;
+    animation:scanMove 2.5s linear infinite;
+}
+@keyframes scanMove {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(420px); }
+}
+
+.overlay-grid {
+    position:absolute;
+    inset:0;
+    background-size:30px 30px;
+    background-image:
+        linear-gradient(rgba(0,255,255,0.2) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,255,0.2) 1px, transparent 1px);
+}
+
+.scan-circle {
+    position:absolute;
+    width:200px;
+    height:200px;
+    border:2px solid cyan;
+    border-radius:50%;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -50%);
+    animation:pulseCircle 2s infinite;
+}
+@keyframes pulseCircle {
+    0%{transform:translate(-50%, -50%) scale(0.8)}
+    50%{transform:translate(-50%, -50%) scale(1.2)}
+    100%{transform:translate(-50%, -50%) scale(0.8)}
+}
+
+.point {
+    position:absolute;
+    width:10px;
+    height:10px;
+    background:cyan;
+    border-radius:50%;
+    box-shadow:0 0 10px cyan;
+    animation:pulse 1.5s infinite;
+}
+@keyframes pulse {
+    0%{transform:scale(1)}
+    50%{transform:scale(1.6)}
+    100%{transform:scale(1)}
+}
+
+</style>
+</head>
+
+<body class="text-white">
+
+<div class="grid md:grid-cols-2 gap-8 p-10">
+
+    <!-- LEFT: IMAGE -->
+    <div class="glass p-6 rounded-xl">
+
+        <h2 class="mb-4 text-cyan-300">Retina Scan</h2>
+
+        {% if image_path %}
+        <div class="scan-container overflow-hidden rounded-xl">
+
+            <img src="{{ url_for('static', filename=image_path.split('static/')[1]) }}"
+                 class="absolute w-full h-full object-cover">
+
+            <div class="overlay-grid"></div>
+            <div class="scan-line"></div>
+            <div class="scan-circle"></div>
+
+            <div class="point" style="top:30%; left:40%"></div>
+            <div class="point" style="top:60%; left:65%"></div>
+
+        </div>
+        {% else %}
+        <p>No image</p>
+        {% endif %}
+
+    </div>
+
+    <!-- RIGHT: FORM -->
+    <form id="patientForm" class="glass p-6 rounded-xl space-y-4">
+
+        <h2 class="text-cyan-300">Clinical Data</h2>
+
+        <input class="input" name="name" placeholder="Full Name" required>
+        <input class="input" name="age" type="number" placeholder="Age">
+
+        <select class="input" name="gender">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+        </select>
+
+        <select class="input" name="pregnancy">
+            <option value="na">Not Applicable</option>
+            <option value="pregnant">Pregnant</option>
+        </select>
+
+        <select class="input" name="smoking">
+            <option value="no">Non-Smoker</option>
+            <option value="yes">Smoker</option>
+        </select>
+
+        <input class="input" name="hba1c" placeholder="HbA1c">
+        <input class="input" name="bp" placeholder="Blood Pressure">
+        <input class="input" name="cholesterol" placeholder="Cholesterol">
+
+        <input class="input" name="duration" placeholder="Diabetes Duration">
+
+        <button class="btn w-full">SAVE & ANALYZE</button>
+
+    </form>
+
+</div>
+
+<script>
+document.getElementById('patientForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = Object.fromEntries(new FormData(e.target).entries());
+
+    // ✅ ADD DATA FROM LOCAL STORAGE
+    const payload = {
+        ...formData,
+        image: localStorage.getItem("image_path"),
+        prediction: localStorage.getItem("prediction"),
+        confidence: localStorage.getItem("confidence"),
+        heatmap: localStorage.getItem("heatmap")
+    };
+
+    const res = await fetch('/save_patient', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    });
+
+    const result = await res.json();
+
+    if (result.error) {
+        alert(result.error);
+        return;
+    }
+
+    alert("Data saved successfully!");
+
+    window.location.href = "/dashboard";
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard | LensScanDx</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    body {
+        background: radial-gradient(circle at top, #09142b, #02040b 60%);
+    }
+    .glass {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(56,189,248,0.35);
+        backdrop-filter: blur(14px);
+        box-shadow: 0 0 35px rgba(34,211,238,0.12);
+    }
+    .pearl {
+        position: relative;
+        overflow: hidden;
+    }
+    .pearl::before {
+        content: "";
+        position: absolute;
+        inset: -120% -20%;
+        background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,0.28) 45%, transparent 70%);
+        animation: pearlSweep 4.8s linear infinite;
+    }
+    .pulse {
+        animation: pulseGlow 1.8s ease-in-out infinite alternate;
+    }
+    .meter-bg {
+        background: linear-gradient(90deg, #16a34a, #84cc16, #eab308, #f97316, #ef4444);
+    }
+    @keyframes pearlSweep {
+        0% { transform: translateX(-55%) translateY(-12%) rotate(12deg); }
+        100% { transform: translateX(55%) translateY(12%) rotate(12deg); }
+    }
+    @keyframes pulseGlow {
+        from { box-shadow: 0 0 14px rgba(34,211,238,0.28); }
+        to { box-shadow: 0 0 26px rgba(34,211,238,0.6); }
+    }
+</style>
+</head>
+
+<body class="min-h-screen text-white p-8 md:p-10">
+
+<h1 class="text-3xl md:text-4xl font-bold text-cyan-300 mb-2">Diagnosis Dashboard</h1>
+<p class="text-cyan-100/70 mb-8">Latest patient snapshot with AI interpretation and clinical indicators.</p>
+
+{% if patient %}
+
+{% set conf_pct = ((patient.confidence or 0) * 100) | round(2) %}
+{% set dr_map = {'No DR': 0, 'Mild': 1, 'Moderate': 2, 'Severe': 3, 'Proliferative DR': 4} %}
+{% set dr_level = dr_map.get(patient.prediction or 'No DR', 0) %}
+{% set duration_num = patient.duration|float if patient.duration else 0 %}
+{% set hba1c_num = patient.hba1c|float if patient.hba1c else 0 %}
+{% set chol_num = patient.cholesterol|float if patient.cholesterol else 0 %}
+{% set bp_text = patient.bp or '' %}
+{% set bp_sys = bp_text.split('/')[0]|float if '/' in bp_text else (bp_text|float if bp_text else 0) %}
+
+<div class="grid lg:grid-cols-3 gap-6">
+    <div class="glass pearl rounded-2xl p-6 lg:col-span-1">
+        <h2 class="text-xl text-cyan-200 font-semibold mb-4">Patient Details</h2>
+        <div class="space-y-2 text-sm">
+            <p><span class="text-cyan-100/70">Name:</span> {{ patient.name or "—" }}</p>
+            <p><span class="text-cyan-100/70">Age:</span> {{ patient.age if patient.age is not none else "—" }}</p>
+            <p><span class="text-cyan-100/70">Gender:</span> {{ patient.gender or "—" }}</p>
+            <p><span class="text-cyan-100/70">Pregnancy:</span> {{ patient.pregnancy or "—" }}</p>
+            <p><span class="text-cyan-100/70">Smoking:</span> {{ patient.smoking or "—" }}</p>
+            {% if patient.timestamp %}
+            <p class="text-cyan-100/60 pt-2 text-xs">Recorded: {{ patient.timestamp.strftime("%Y-%m-%d %H:%M") }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="glass rounded-2xl p-6 lg:col-span-2">
+        <h2 class="text-xl text-cyan-200 font-semibold mb-5">AI Output</h2>
+        <div class="grid md:grid-cols-2 gap-6 items-center">
+            <div class="flex flex-col items-center justify-center">
+                <div id="confidenceRing" class="pulse rounded-full w-44 h-44 flex items-center justify-center"
+                    data-conf="{{ conf_pct }}">
+                    <div class="w-32 h-32 rounded-full bg-slate-950/95 border border-cyan-300/40 flex flex-col items-center justify-center">
+                        <p class="text-xs text-cyan-100/70">Confidence</p>
+                        <p class="text-2xl font-bold text-cyan-200">{{ conf_pct }}%</p>
+                    </div>
+                </div>
+                <p class="text-sm text-cyan-100/70 mt-4">Prediction: <span class="text-cyan-200 font-semibold">{{ patient.prediction or "—" }}</span></p>
+            </div>
+
+            <div>
+                <p class="text-sm text-cyan-100/70 mb-2">DR Severity Scale</p>
+                <div class="meter-bg rounded-full h-3 relative">
+                    <div id="severityKnob" class="absolute -top-2 w-6 h-6 rounded-full border-2 border-cyan-100 bg-cyan-300 shadow-lg"
+                         data-level="{{ (dr_level/4*100)|round(2) }}"></div>
+                </div>
+                <div class="flex justify-between text-[11px] text-cyan-100/70 mt-2">
+                    <span>No DR</span><span>Mild</span><span>Moderate</span><span>Severe</span><span>PDR</span>
+                </div>
+                <p class="mt-6 text-xs text-cyan-100/60">Severity index: {{ dr_level }}/4</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid lg:grid-cols-3 gap-6 mt-6">
+    <div class="glass rounded-2xl p-5">
+        <h3 class="text-cyan-200 font-semibold mb-3">Clinical Bars</h3>
+        <div class="space-y-4 text-xs">
+            <div>
+                <div class="flex justify-between mb-1"><span>HbA1c</span><span>{{ patient.hba1c or "—" }}</span></div>
+                <div class="h-2 bg-slate-800 rounded-full"><div class="h-2 rounded-full bg-cyan-300" data-width="{{ [((hba1c_num/12)*100)|round(1), 100]|min }}"></div></div>
+            </div>
+            <div>
+                <div class="flex justify-between mb-1"><span>Systolic BP</span><span>{{ patient.bp or "—" }}</span></div>
+                <div class="h-2 bg-slate-800 rounded-full"><div class="h-2 rounded-full bg-fuchsia-300" data-width="{{ [((bp_sys/200)*100)|round(1), 100]|min }}"></div></div>
+            </div>
+            <div>
+                <div class="flex justify-between mb-1"><span>Cholesterol</span><span>{{ patient.cholesterol or "—" }}</span></div>
+                <div class="h-2 bg-slate-800 rounded-full"><div class="h-2 rounded-full bg-amber-300" data-width="{{ [((chol_num/300)*100)|round(1), 100]|min }}"></div></div>
+            </div>
+            <div>
+                <div class="flex justify-between mb-1"><span>Diabetes Duration (yrs)</span><span>{{ patient.duration or "—" }}</span></div>
+                <div class="h-2 bg-slate-800 rounded-full"><div class="h-2 rounded-full bg-emerald-300" data-width="{{ [((duration_num/20)*100)|round(1), 100]|min }}"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="glass rounded-2xl p-5 lg:col-span-2">
+        <h3 class="text-cyan-200 font-semibold mb-3">Retina Visuals</h3>
+        <div class="grid md:grid-cols-2 gap-4">
+            <div>
+                <p class="text-xs text-cyan-100/70 mb-2">Original</p>
+                {% if patient.image_path %}
+                    {% set static_rel = patient.image_path.split('static/', 1)[1] if 'static/' in patient.image_path else patient.image_path %}
+                    <img src="{{ url_for('static', filename=static_rel) }}" alt="Fundus" class="rounded-xl w-full border border-cyan-400/40">
+                {% else %}
+                    <div class="rounded-xl border border-dashed border-cyan-300/40 min-h-32 grid place-items-center text-cyan-100/50 text-sm">No image</div>
+                {% endif %}
+            </div>
+            <div>
+                <p class="text-xs text-cyan-100/70 mb-2">Grad-CAM Overlay</p>
+                {% if patient.heatmap %}
+                    <img src="data:image/jpeg;base64,{{ patient.heatmap }}" alt="Heatmap" class="rounded-xl w-full border border-cyan-400/40">
+                {% else %}
+                    <div class="rounded-xl border border-dashed border-cyan-300/40 min-h-32 grid place-items-center text-cyan-100/50 text-sm">No heatmap</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-8 flex justify-end">
+    <a href="/report" class="px-6 py-3 rounded-full bg-cyan-400 text-slate-950 font-semibold shadow-lg shadow-cyan-400/30 hover:scale-105 transition">
+        View & Download Report
+    </a>
+</div>
+
+{% else %}
+
+<p class="text-gray-400">No patient data available. Complete an upload, enter details on the patient page, and save.</p>
+
+{% endif %}
+
+<script>
+    const ring = document.getElementById("confidenceRing");
+    if (ring) {
+        const conf = Number(ring.dataset.conf || 0);
+        ring.style.background = `conic-gradient(#22d3ee ${conf}%, rgba(255,255,255,0.08) 0)`;
+    }
+
+    const knob = document.getElementById("severityKnob");
+    if (knob) {
+        const level = Number(knob.dataset.level || 0);
+        knob.style.left = `calc(${level}% - 12px)`;
+    }
+
+    document.querySelectorAll("[data-width]").forEach((el) => {
+        const val = Number(el.getAttribute("data-width") || 0);
+        el.style.width = `${Math.max(0, Math.min(100, val))}%`;
+    });
+</script>
+</body>
+</html>

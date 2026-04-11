@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>LensScanDx</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+
+/* BACKGROUND */
+body {
+    font-family: 'Inter', sans-serif;
+    background: radial-gradient(circle at top, #050816, #000);
+}
+
+/* GRID BACKGROUND */
+.grid-bg {
+    position:absolute;
+    width:100%;
+    height:100%;
+    background-image:
+        linear-gradient(rgba(0,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,255,0.05) 1px, transparent 1px);
+    background-size:40px 40px;
+    animation:gridMove 8s linear infinite;
+}
+@keyframes gridMove {
+    0%{transform:translateY(0)}
+    100%{transform:translateY(40px)}
+}
+
+/* NEON */
+.neon-text {
+    text-shadow:0 0 10px #00f7ff,0 0 30px #00f7ff;
+}
+
+/* GLASS */
+.glass {
+    background:rgba(255,255,255,0.05);
+    backdrop-filter:blur(12px);
+    border:1px solid rgba(255,255,255,0.1);
+}
+
+/* FLOAT */
+@keyframes float {
+    0%,100%{transform:translateY(0)}
+    50%{transform:translateY(-10px)}
+}
+.float { animation:float 4s ease-in-out infinite; }
+
+/* BUTTON HOVER */
+.btn-hover {
+    transition: all 0.3s ease;
+}
+.btn-hover:hover {
+    transform: scale(1.1);
+}
+
+/* SCAN LINE */
+.scan-line {
+    position:absolute;
+    width:100%;
+    height:2px;
+    background:cyan;
+    box-shadow:0 0 20px cyan;
+    animation:scan 3s infinite;
+}
+@keyframes scan {
+    0%{top:0%}
+    50%{top:100%}
+    100%{top:0%}
+}
+
+/* RADAR */
+.radar {
+    position:absolute;
+    width:280px;
+    height:280px;
+    border-radius:50%;
+    border:2px solid rgba(0,255,255,0.2);
+    animation:rotate 6s linear infinite;
+}
+@keyframes rotate {
+    0%{transform:rotate(0)}
+    100%{transform:rotate(360deg)}
+}
+
+/* GRID OVER IMAGE */
+.overlay-grid {
+    position:absolute;
+    inset:0;
+    background-image:
+        linear-gradient(rgba(0,255,255,0.25) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,255,0.25) 1px, transparent 1px);
+    background-size:30px 30px;
+    animation:gridScan 4s linear infinite;
+}
+@keyframes gridScan {
+    0%{transform:translateY(0)}
+    100%{transform:translateY(30px)}
+}
+
+/* DETECTION POINTS */
+.point {
+    position:absolute;
+    width:10px;
+    height:10px;
+    background:cyan;
+    border-radius:50%;
+    box-shadow:0 0 10px cyan,0 0 20px cyan;
+    animation:pulse 2s infinite;
+}
+@keyframes pulse {
+    0%{transform:scale(1)}
+    50%{transform:scale(1.5)}
+    100%{transform:scale(1)}
+}
+
+/* VESSEL EFFECT */
+.vessel-overlay {
+    position:absolute;
+    inset:0;
+    background: radial-gradient(circle, transparent 40%, rgba(0,255,255,0.15));
+    mix-blend-mode: screen;
+    animation: vesselPulse 3s infinite;
+}
+@keyframes vesselPulse {
+    0%{opacity:0.2}
+    50%{opacity:0.5}
+    100%{opacity:0.2}
+}
+
+/* CTA */
+.cta {
+    box-shadow:0 0 20px cyan, inset 0 0 10px cyan;
+}
+
+/* FADE */
+.fade {
+    animation:fadeIn 1s ease forwards;
+}
+@keyframes fadeIn {
+    from{opacity:0; transform:translateY(20px)}
+    to{opacity:1; transform:translateY(0)}
+}
+
+</style>
+</head>
+
+<body class="text-white relative overflow-x-hidden">
+
+<div class="grid-bg"></div>
+
+<!-- HEADER -->
+<header class="flex justify-between px-10 py-6 relative z-10">
+    <div>
+        <h1 class="text-2xl font-bold neon-text font-[Orbitron]">LensScanDx</h1>
+        <p class="text-sm text-gray-400">Diabetic Retinopathy Detection</p>
+    </div>
+</header>
+
+<!-- HERO -->
+<section class="grid md:grid-cols-2 items-center px-10 md:px-20 min-h-[80vh] relative z-10">
+
+    <!-- LEFT -->
+    <div class="flex justify-center relative">
+
+        <div class="relative w-[85%]">
+
+            <!-- IMAGE -->
+            <img src="{{ url_for('static', filename='retina_image.jpg') }}"
+                 class="rounded-xl w-full relative z-10">
+
+            <!-- OVERLAYS -->
+            <div class="overlay-grid z-20 pointer-events-none"></div>
+            <div class="vessel-overlay z-20 pointer-events-none"></div>
+            <div class="scan-line z-30 pointer-events-none"></div>
+
+            <!-- DETECTION POINTS -->
+            <div class="point z-40" style="top:30%; left:40%"></div>
+            <div class="point z-40" style="top:60%; left:60%"></div>
+            <div class="point z-40" style="top:50%; left:20%"></div>
+
+        </div>
+
+        <!-- RADAR -->
+        <div class="radar"></div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div class="space-y-6">
+
+        <h2 class="text-5xl font-extrabold neon-text font-[Orbitron] fade">
+            Welcome to LensScanDx
+        </h2>
+
+        <p class="text-lg text-gray-300 fade">
+            Advanced AI for Automated Diabetic Retinopathy Detection
+        </p>
+
+        <div class="flex gap-4">
+            <div class="glass p-4 rounded-xl text-sm float">📊 98% Accuracy</div>
+            <div class="glass p-4 rounded-xl text-sm float">⚡ Real-time Analysis</div>
+        </div>
+
+        <div class="space-y-3">
+            <div class="glass p-3 rounded-lg text-xs float">Retina Scan: Active</div>
+            <div class="glass p-3 rounded-lg text-xs float">AI Model: Active</div>
+            <div class="glass p-3 rounded-lg text-xs float">Cell Structure Detected</div>
+        </div>
+
+    </div>
+</section>
+
+<!-- CTA -->
+<div class="flex justify-center mb-24 relative z-10">
+    <a href="/upload"
+       class="flex items-center gap-3 px-12 py-5 rounded-full text-lg font-bold 
+              bg-gradient-to-r from-cyan-400 to-blue-600 
+              cta btn-hover">
+
+        <i class="fa-solid fa-eye"></i>
+        START ANALYSIS
+    </a>
+</div>
+
+<!-- FOOTER -->
+<footer class="w-full text-center py-4 bg-black/70 text-gray-300 text-sm relative z-10">
+    Developed for early detection and prevention. Accurate. Fast. Secure.
+</footer>
+
+</body>
+</html>
