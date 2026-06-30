@@ -1,3 +1,4 @@
+<img width="1280" height="832" alt="photo 1" src="https://github.com/user-attachments/assets/7eb0d728-786d-405d-983e-8fa963bc2e27" />
 # 🩺 Diabetic Retinopathy Detection using Deep Learning
 
 > An AI-powered web application that detects Diabetic Retinopathy from retinal fundus images using a deep learning model, enabling quick and accessible screening for early diagnosis.
@@ -40,19 +41,33 @@ The system allows users to upload a retinal image through a simple web interface
 
 ## Home Page
 
-![Home](screenshots/home.png)
+<img width="1280" height="832" alt="photo 1" src="https://github.com/user-attachments/assets/692baeac-c1a7-4f3a-a000-2ef92a603dad" />
+
 
 ---
 
 ## Upload Image
 
-![Upload](screenshots/upload.png)
+<img width="1280" height="832" alt="photo 2" src="https://github.com/user-attachments/assets/c0acdf94-f900-42b7-845f-e86bd2e699c8" />
+<img width="1280" height="832" alt="photo 3" src="https://github.com/user-attachments/assets/ce1c3ba0-fac8-4108-8f5e-0c63ed2c0262" />
+
+
+---
+## Patient Details
+
+<img width="1280" height="832" alt="photo 4" src="https://github.com/user-attachments/assets/71573d21-d1fd-4474-a67b-0c8ffd85e41e" />
 
 ---
 
 ## Prediction Result
 
-![Prediction](screenshots/result.png)
+<img width="1600" height="1041" alt="photo 5" src="https://github.com/user-attachments/assets/36953fcb-4da5-412b-9d91-007af0dc15f7" />
+
+---
+## Report
+
+<img width="1600" height="1041" alt="photo 6" src="https://github.com/user-attachments/assets/992153ff-8401-4cf1-8740-2b43cdfdf453" />
+<img width="1600" height="1041" alt="photo 7" src="https://github.com/user-attachments/assets/013d2e5d-7f35-44ab-a70b-0224c6149c01" />
 
 ---
 
@@ -283,7 +298,7 @@ GitHub:
 https://github.com/ektamishra0-1
 
 LinkedIn:
-(Add your LinkedIn)
+www.linkedin.com/in/ekta-mishra-481501343
 
 ---
 
